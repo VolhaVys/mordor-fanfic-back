@@ -1,0 +1,21 @@
+{
+  "name": "task-4-c",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "mongodb": "^3.6.9",
+    "morgan": "~1.9.1"
+  },
+  "devDependencies": {
+    "uuid": "^8.3.2"
+  }
+}
