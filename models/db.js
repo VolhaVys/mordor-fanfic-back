@@ -1,4 +1,5 @@
-const MongoClient = require('mongodb').MongoClient;
+const {MongoClient, ObjectId} = require('mongodb');
+ObjectID = require('mongodb').ObjectID;
 const url = "mongodb://localhost:27017/";
 const dbName = 'task_4';
 
@@ -39,6 +40,60 @@ module.exports.updateLastLoginDate = function (id) {
                             lastLoginDate: true,
                         }
                     })
+            })
+    })
+}
+
+module.exports.updateStatus = function (ids, status) {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection('users')
+                    .updateMany({
+                        _id: {
+                            $in: ids.map(id => {
+                                return new ObjectId(id);
+                            })
+                        }
+                    }, {
+                        $set: {
+                            status
+                        }
+                    }).then(() => {
+                    resolve();
+                }).catch((err) => {
+                    reject(err)
+                })
+            })
+    })
+}
+
+module.exports.deleteUsers = function (ids) {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection('users')
+                    .deleteMany({
+                        _id: {
+                            $in: ids.map(id => {
+                                return new ObjectId(id);
+                            })
+                        }
+                    }).then(() => {
+                    resolve();
+                }).catch((err) => {
+                    reject(err)
+                })
             })
     })
 }
@@ -108,9 +163,8 @@ module.exports.add = function (tabl, data) {
     })
 }
 
-module.exports.delete = function (email) {
+module.exports.deleteTokens = function (email) {
     return new Promise((resolve, reject) => {
-        //const id = new ObjectID(zadacaId);
         MongoClient
             .connect(url, function (err, client) {
                 if (err) {

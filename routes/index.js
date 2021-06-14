@@ -4,18 +4,62 @@ const db = require('../models/db');
 const bcrypt = require('bcryptjs');
 const {v4: uuidv4} = require('uuid');
 
-const status = {ACTIVE: 'active', BLOCKED: 'blocked'};
+const Status = {ACTIVE: 'active', BLOCKED: 'blocked'};
 
-let auth = function (req, res, next) {
+const setUserStatus = (req, res, next, status) => {
+    db
+        .updateStatus(req.body, status)
+        .then(() => {
+            if (status === Status.BLOCKED && req.body.includes(req.user._id.toString())) {
+                const err = new Error('Your account is blocked!');
+                err.status = 403;
+                next(err);
+                return;
+            }
+
+            getUsers(res, next);
+        })
+        .catch((err) => {
+            next(err);
+        })
+}
+
+const getUsers = (res, next) => {
+    db
+        .getUsers()
+        .then((results) => {
+            res.json(results);
+        })
+        .catch((err) => {
+            next(err);
+        })
+}
+
+const auth = function (req, res, next) {
     db
         .getToken(req.headers.authorization)
         .then((results) => {
             if (results.length === 0) {
-                const err = new Error('Не авторизован!');
+                const err = new Error('Not authorized!');
                 err.status = 401;
                 next(err);
             } else {
-                next()
+                db
+                    .getUser(results[0].login)
+                    .then((results) => {
+                        if (results[0].status === Status.BLOCKED) {
+                            const err = new Error('Your account is blocked!');
+                            err.status = 403;
+                            next(err);
+                            return;
+                        }
+
+                        req.user = results[0];
+                        next();
+                    })
+                    .catch((err) => {
+                        next(err);
+                    })
             }
         })
         .catch((err) => {
@@ -35,7 +79,7 @@ router.get('/', (req, res) => {
 
 router.get('/secret', auth, (req, res) => {
     res.json({
-        message: 'Секретная страница!'
+        message: 'Secret page!'
     })
 });
 
@@ -51,19 +95,20 @@ router.post('/registration', (req, res, next) => {
                         email: req.body.email,
                         registrationDate: new Date().toISOString(),
                         lastLoginDate: new Date().toISOString(),
-                        status: status.ACTIVE,
+                        status: Status.ACTIVE,
                         password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
                     };
                     db
                         .add('users', data)
                         .then((result) => {
-                            generateToken(req.body.email, res, next);
+                            console.log(result)
+                            generateToken(result.email, res, next);
                         })
                         .catch((err) => {
                             next(err);
                         })
                 } else {
-                    const err = new Error('Такой пользователь уже есть!');
+                    const err = new Error('This user already exists!');
                     err.status = 400;
                     next(err);
                 }
@@ -72,17 +117,35 @@ router.post('/registration', (req, res, next) => {
                 next(err);
             })
     } else {
-        const err = new Error('Не совпадает пароль и подтверждение пароля!');
+        const err = new Error('Password and password confirmation do not match!');
         err.status = 400;
         next(err);
     }
 })
 
 router.get('/user', auth, (req, res, next) => {
+    getUsers(res, next);
+})
+
+router.put('/user/block', auth, (req, res, next) => {
+    setUserStatus(req, res, next, Status.BLOCKED);
+})
+
+router.put('/user/unblock', auth, (req, res, next) => {
+    setUserStatus(req, res, next, Status.ACTIVE);
+})
+
+router.post('/user', auth, (req, res, next) => {
     db
-        .getUsers()
-        .then((results) => {
-            res.json(results);
+        .deleteUsers(req.body)
+        .then(() => {
+            if (req.body.includes(req.user._id.toString())) {
+                const err = new Error('Your account is deleted!');
+                err.status = 403;
+                next(err);
+                return;
+            }
+            getUsers(res, next);
         })
         .catch((err) => {
             next(err);
@@ -94,8 +157,14 @@ router.post('/login', (req, res, next) => {
         .getUser(req.body.email)
         .then((results) => {
             if (results.length === 0) {
-                const err = new Error('Не верный логин или пароль!');
+                const err = new Error('Is not a valid username or password!');
                 err.status = 400;
+                next(err);
+                return;
+            }
+            if (results[0].status === Status.BLOCKED) {
+                const err = new Error('Your account is blocked!');
+                err.status = 403;
                 next(err);
                 return;
             }
@@ -106,7 +175,7 @@ router.post('/login', (req, res, next) => {
                 })
                 generateToken(req.body.email, res, next);
             } else {
-                const err = new Error('Не верный логин или пароль!');
+                const err = new Error('Is not a valid username or password!');
                 err.status = 400;
                 next(err);
             }
@@ -121,7 +190,7 @@ const generateToken = (email, res, next) => {
     data.login = email;
     data.token = uuidv4();
     db
-        .delete(email)
+        .deleteTokens(email)
         .then((results) => {
             db
                 .add('token', data)
