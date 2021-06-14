@@ -8,7 +8,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 // Add headers
-app.use(cors({origin: process.env.CORS_ORIGIN || 'http://localhost:3000'}));
+console.log(process.env.CORS_ORIGIN);
+app.use(cors());
 
 app.use('/', router);
 
