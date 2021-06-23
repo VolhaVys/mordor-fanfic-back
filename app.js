@@ -1,17 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const router = require('./routes');
+const authRouter = require('./routes/auth');
+const userRouter = require('./routes/users');
 const cors = require('cors');
 const app = express();
+const API_VERSION = 'v1';
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 // Add headers
-console.log(process.env.CORS_ORIGIN);
 app.use(cors());
 
-app.use('/', router);
+app.use(`/api/${API_VERSION}/`, authRouter);
+app.use(`/api/${API_VERSION}/`, userRouter);
 
 app.use(function (req, res, next) {
     const err = new Error('Path not found');

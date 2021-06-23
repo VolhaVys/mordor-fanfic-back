@@ -1,9 +1,7 @@
 const {MongoClient, ObjectId} = require('mongodb');
-ObjectID = require('mongodb').ObjectID;
-const url = "mongodb://localhost:27017/";
-const dbName = 'task_4';
+const {dbName, url} = require('./dbConfig');
 
-module.exports.getUsers = function () {
+module.exports.getAll = function () {
     return new Promise((resolve, reject) => {
         MongoClient
             .connect(url, function (err, client) {
@@ -73,7 +71,7 @@ module.exports.updateStatus = function (ids, status) {
     })
 }
 
-module.exports.deleteUsers = function (ids) {
+module.exports.delete = function (ids) {
     return new Promise((resolve, reject) => {
         MongoClient
             .connect(url, function (err, client) {
@@ -98,7 +96,7 @@ module.exports.deleteUsers = function (ids) {
     })
 }
 
-module.exports.getUser = function (email) {
+module.exports.getByEmail = function (email) {
     return new Promise((resolve, reject) => {
         MongoClient
             .connect(url, function (err, client) {
@@ -117,70 +115,5 @@ module.exports.getUser = function (email) {
                         resolve(results);
                     })
             })
-    })
-}
-
-module.exports.getToken = function (token) {
-    return new Promise((resolve, reject) => {
-        MongoClient
-            .connect(url, function (err, client) {
-                if (err) {
-                    reject(err);
-                }
-                client
-                    .db(dbName)
-                    .collection('token')
-                    .find({"token": token})
-                    .toArray(function (err, results) {
-                        if (err) {
-                            reject(err)
-                        }
-                        client.close();
-                        resolve(results);
-                    })
-            })
-    })
-}
-
-module.exports.add = function (tabl, data) {
-    return new Promise((resolve, reject) => {
-        MongoClient
-            .connect(url, function (err, client) {
-                if (err) {
-                    reject(err);
-                }
-                client
-                    .db(dbName)
-                    .collection(tabl)
-                    .insertOne(data, function (err, results) {
-                        if (err) {
-                            reject(err);
-                        }
-                        client.close();
-                        resolve(results.ops[0]);
-                    })
-            });
-    })
-}
-
-module.exports.deleteTokens = function (email) {
-    return new Promise((resolve, reject) => {
-        MongoClient
-            .connect(url, function (err, client) {
-                if (err) {
-                    reject(err);
-                }
-                client
-                    .db(dbName)
-                    .collection('token')
-                    .deleteMany({email},
-                        function (err, results) {
-                            if (err) {
-                                reject(err);
-                            }
-                            client.close();
-                            resolve(results);
-                        })
-            });
     })
 }
