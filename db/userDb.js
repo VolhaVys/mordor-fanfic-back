@@ -1,5 +1,7 @@
 const {MongoClient, ObjectId} = require('mongodb');
 const {dbName, url} = require('./dbConfig');
+const USERS_COLLECTION = 'users';
+module.exports.USERS_COLLECTION = USERS_COLLECTION;
 
 module.exports.getAll = function () {
     return new Promise((resolve, reject) => {
@@ -10,7 +12,7 @@ module.exports.getAll = function () {
                 }
                 client
                     .db(dbName)
-                    .collection('users')
+                    .collection(USERS_COLLECTION)
                     .find({}, {password: 0})
                     .toArray(function (err, results) {
                         if (err) {
@@ -32,7 +34,7 @@ module.exports.updateLastLoginDate = function (id) {
                 }
                 client
                     .db(dbName)
-                    .collection('users')
+                    .collection(USERS_COLLECTION)
                     .updateOne({_id: id}, {
                         $currentDate: {
                             lastLoginDate: true,
@@ -51,7 +53,7 @@ module.exports.updateStatus = function (ids, status) {
                 }
                 client
                     .db(dbName)
-                    .collection('users')
+                    .collection(USERS_COLLECTION)
                     .updateMany({
                         _id: {
                             $in: ids.map(id => {
@@ -80,7 +82,7 @@ module.exports.delete = function (ids) {
                 }
                 client
                     .db(dbName)
-                    .collection('users')
+                    .collection(USERS_COLLECTION)
                     .deleteMany({
                         _id: {
                             $in: ids.map(id => {
@@ -105,7 +107,7 @@ module.exports.getByEmail = function (email) {
                 }
                 client
                     .db(dbName)
-                    .collection('users')
+                    .collection(USERS_COLLECTION)
                     .find({email})
                     .toArray(function (err, results) {
                         if (err) {

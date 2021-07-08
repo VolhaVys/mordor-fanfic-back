@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
 const auth = require('../helpers/authHelper');
-
+const {LIKES_COLLECTION} = require('../db/likeDb');
+const {ObjectId} = require('mongodb');
 
 router.get('/fanfics', (req, res, next) => {
     db
@@ -65,6 +66,17 @@ router.get('/users/fanfics', auth, (req, res, next) => {
         .fanfic.getByUserId(req.user._id)
         .then((results) => {
             res.json(results);
+        })
+        .catch((err) => {
+            next(err);
+        })
+})
+
+router.put('/fanfics/:id/like', auth, (req, res, next) => {
+    db
+        .add(LIKES_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id) })
+        .then((result) => {
+            res.status(200).send({message: "Updated"});
         })
         .catch((err) => {
             next(err);
