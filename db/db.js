@@ -14,6 +14,11 @@ module.exports.token = token;
 const like = require('./likeDb');
 module.exports.like = like;
 
+const bookmark = require('./bookmarksDb');
+module.exports.bookmark = bookmark;
+
+const rating = require('./ratingDb');
+module.exports.rating = rating;
 
 module.exports.add = function (collection, data) {
     return new Promise((resolve, reject) => {

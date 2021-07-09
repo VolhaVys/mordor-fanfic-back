@@ -1,3 +1,4 @@
+const {BOOKMARKS_COLLECTION} = require("./bookmarksDb");
 const {LIKES_COLLECTION} = require("./likeDb");
 const {MongoClient, ObjectId} = require('mongodb');
 const {dbName, url} = require('./dbConfig');
@@ -80,16 +81,36 @@ module.exports.getByUserId = function (id) {
                             $addFields: {
                                 likes: {$size: "$ff_likes"}
                             }
+                        }, {
+                            $lookup: {
+                                from: BOOKMARKS_COLLECTION,
+                                let: {id: "$_id"},
+                                pipeline: [{
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                {$eq: ['$fanficId', '$$id']},
+                                                {$eq: ['$userId', id]},
+                                            ]
+                                        }
+                                    }
+                                }],
+                                as: 'user_bookmark'
+                            }
+                        }, {
+                            $addFields: {
+                                isBookmarked: { $gt: [{$size: "$user_bookmark"}, 0] }
+                            }
                         },{
                             $project: {
                                 _id: 1,
                                 fandom: 1,
                                 tags: 1,
-                                chapters: 1,
                                 title: 1,
                                 description: 1,
                                 likes: 1,
                                 isLiked: 1,
+                                isBookmarked: 1,
                                 user: {firstName: 1, lastName: 1, _id: 1}
                             }
                         }]
@@ -131,7 +152,7 @@ module.exports.update = function (fanfic) {
     })
 }
 
-module.exports.delete = function (ids) {
+module.exports.delete = function (id) {
     return new Promise((resolve, reject) => {
             MongoClient
                 .connect(url, function (err, client) {
@@ -142,11 +163,7 @@ module.exports.delete = function (ids) {
                         .db(dbName)
                         .collection('fanfics')
                         .deleteMany({
-                            _id: {
-                                $in: ids.map(id => {
-                                    return new ObjectId(id);
-                                })
-                            }
+                            _id: new ObjectId(id)
                         }).then(() => {
                         resolve();
                     }).catch((err) => {
@@ -173,40 +190,13 @@ module.exports.getById = function (id) {
                             reject(err)
                         }
                         client.close();
-                        resolve(results);
+
+                        if(results.length) {
+                            resolve(results[0]);
+                        }
+                        // TODO write error
+                        reject({});
                     })
             })
     })
-}
-
-const changeLikes = (fanficId, amount) => {
-    return new Promise((resolve, reject) => {
-        MongoClient
-            .connect(url, function (err, client) {
-                if (err) {
-                    reject(err);
-                }
-
-                client
-                    .db(dbName)
-                    .collection('fanfics')
-                    .updateOne({
-                        _id: new ObjectId(fanficId)
-                    }, {
-                        $set: {likes: amount}
-                    }).then((result) => {
-                    resolve(result);
-                }).catch((err) => {
-                    reject(err)
-                })
-            })
-    })
-}
-
-module.exports.like = function (fanficId) {
-    return changeLikes(fanficId, 1);
-}
-
-module.exports.unlike = function (fanficId) {
-    return changeLikes(fanficId, -1);
 }
