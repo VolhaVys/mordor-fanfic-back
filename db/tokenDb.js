@@ -1,5 +1,7 @@
 const {MongoClient} = require('mongodb');
 const {dbName, url} = require('./dbConfig');
+const TOKENS_COLLECTION = 'tokens';
+module.exports.TOKENS_COLLECTION = TOKENS_COLLECTION;
 
 
 module.exports.get = function (token) {
@@ -11,7 +13,7 @@ module.exports.get = function (token) {
                 }
                 client
                     .db(dbName)
-                    .collection('token')
+                    .collection(TOKENS_COLLECTION)
                     .find({"token": token})
                     .toArray(function (err, results) {
                         if (err) {
@@ -33,7 +35,7 @@ module.exports.delete = function (email) {
                 }
                 client
                     .db(dbName)
-                    .collection('token')
+                    .collection(TOKENS_COLLECTION)
                     .deleteMany({email},
                         function (err, results) {
                             if (err) {

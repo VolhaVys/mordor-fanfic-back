@@ -11,7 +11,7 @@ const auth = function (req, res, next) {
                 next(err);
             } else {
                 db
-                    .user.getByEmail(results[0].login)
+                    .user.getByEmail(results[0].email)
                     .then((results) => {
                         if (results[0].status === Status.BLOCKED) {
                             const err = new Error('Your account is blocked!');

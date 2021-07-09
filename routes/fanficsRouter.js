@@ -40,9 +40,8 @@ router.delete('/fanfics', auth, (req, res, next) => {
 
 router.post('/fanfics', auth, (req, res, next) => {
     db
-        .add('fanfics', {...req.body, userId: req.user._id})
+        .add('fanfics', {...req.body, userId: req.user._id, likes: 0})
         .then((result) => {
-            console.log(result);
             res.status(200).json(result);
         })
         .catch((err) => {
@@ -52,7 +51,7 @@ router.post('/fanfics', auth, (req, res, next) => {
 
 router.get('/users/:id/fanfics', (req, res, next) => {
     db
-        .fanfic.getByUserId(req.params.id)
+        .fanfic.getByUserId(new ObjectId(req.params.id))
         .then((results) => {
             res.json(results);
         })
@@ -74,9 +73,30 @@ router.get('/users/fanfics', auth, (req, res, next) => {
 
 router.put('/fanfics/:id/like', auth, (req, res, next) => {
     db
-        .add(LIKES_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id) })
+        .add(LIKES_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id)})
         .then((result) => {
-            res.status(200).send({message: "Updated"});
+            db.fanfic.like(req.params.id).then((result) => {
+                    res.status(200).send({message: "Liked"});
+                })
+                .catch((err) => {
+                    next(err);
+                })
+        })
+        .catch((err) => {
+            next(err);
+        })
+})
+
+router.put('/fanfics/:id/unlike', auth, (req, res, next) => {
+    db
+        .like.delete(req.user._id, new ObjectId(req.params.id))
+        .then((result) => {
+            db.fanfic.unlike(req.params.id).then((result) => {
+                res.status(200).send({message: "Unliked"});
+            })
+                .catch((err) => {
+                    next(err);
+                })
         })
         .catch((err) => {
             next(err);

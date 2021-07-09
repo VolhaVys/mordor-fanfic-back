@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
 const bcrypt = require('bcryptjs');
+const {TOKENS_COLLECTION} = require("../db/tokenDb");
 const {v4: uuidv4} = require('uuid');
 const {Status} = require('../models/user');
 
@@ -83,13 +84,13 @@ router.post('/login', (req, res, next) => {
 
 const generateToken = ({email, firstName, lastName}, res, next) => {
     const data = {};
-    data.login = email;
+    data.email = email;
     data.token = uuidv4();
     db
         .token.delete(email)
         .then(() => {
             db
-                .add('token', data)
+                .add(TOKENS_COLLECTION, data)
                 .then((results) => {
                     res.json({
                         token: results.token,

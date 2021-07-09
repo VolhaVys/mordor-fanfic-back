@@ -11,6 +11,9 @@ module.exports.user = user;
 const token = require('./tokenDb');
 module.exports.token = token;
 
+const like = require('./likeDb');
+module.exports.like = like;
+
 
 module.exports.add = function (collection, data) {
     return new Promise((resolve, reject) => {
