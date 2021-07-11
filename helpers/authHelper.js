@@ -33,4 +33,34 @@ const auth = function (req, res, next) {
         })
 }
 
-module.exports = auth;
+module.exports.auth = auth;
+
+const getUser = function (req, res, next) {
+    db
+        .token.get(req.headers.authorization)
+        .then((results) => {
+            if (results.length === 0) {
+                next();
+            } else {
+                db
+                    .user.getByEmail(results[0].email)
+                    .then((results) => {
+                        if (results[0].status === Status.BLOCKED) {
+                            next();
+                            return;
+                        }
+
+                        req.user = results[0];
+                        next();
+                    })
+                    .catch(() => {
+                        next();
+                    })
+            }
+        })
+        .catch(() => {
+            next();
+        })
+}
+
+module.exports.getUser = getUser;

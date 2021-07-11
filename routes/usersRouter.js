@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
 const {Status} = require('../models/user');
-const auth = require('../helpers/authHelper');
+const { auth } = require('../helpers/authHelper');
 
 
 const setUserStatus = (req, res, next, status) => {

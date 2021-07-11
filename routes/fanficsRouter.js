@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
-const auth = require('../helpers/authHelper');
+const { auth, getUser } = require('../helpers/authHelper');
 const {RATING_COLLECTION} = require("../db/ratingDb");
 const {BOOKMARKS_COLLECTION} = require("../db/bookmarksDb");
 const {Role} = require("../models/user");
@@ -62,7 +62,7 @@ router.delete('/fanfics/:id', auth, getFanfic, (req, res, next) => {
 
 router.post('/fanfics', auth, (req, res, next) => {
     db
-        .add('fanfics', {...req.body, userId: req.user._id, likes: 0})
+        .add('fanfics', {...req.body, userId: req.user._id, updateAt: new Date().toISOString(),})
         .then((result) => {
             res.status(200).json(result);
         })
@@ -168,6 +168,30 @@ router.put('/fanfics/:id/rating', auth, (req, res, next) => {
             next(err);
         })
 })
+
+router.get('/fanfics/top/:limit', getUser,
+    (req, res, next) => {
+        db
+            .fanfic.getTopRate(+req.params.limit, req.user?._id)
+            .then((results) => {
+                res.json(results);
+            })
+            .catch((err) => {
+                next(err);
+            });
+    })
+
+router.get('/fanfics/last/:limit', getUser,
+    (req, res, next) => {
+        db
+            .fanfic.getLast(+req.params.limit, req.user?._id)
+            .then((results) => {
+                res.json(results);
+            })
+            .catch((err) => {
+                next(err);
+            });
+    })
 
 
 module.exports = router;
