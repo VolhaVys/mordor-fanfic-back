@@ -8,6 +8,8 @@ const {Role} = require("../models/user");
 const {LIKES_COLLECTION} = require('../db/likeDb');
 const {ObjectId} = require('mongodb');
 
+
+
 const getFanfic = function (req, res, next) {
     db
         .fanfic.getById(req.params.id)
@@ -93,7 +95,7 @@ router.get('/users/fanfics', auth, (req, res, next) => {
 
 router.put('/fanfics/:id/like', auth, (req, res, next) => {
     db
-        .add(LIKES_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id)})
+        .like.insertOrUpdate(req.user._id, new ObjectId(req.params.id))
         .then((result) => {
             res.status(200).send({message: "Liked"});
         })
@@ -136,6 +138,19 @@ router.put('/fanfics/:id/remove_bookmark', auth, (req, res, next) => {
         })
 })
 
+router.get('/fanfics/bookmarked', auth,
+    (req, res, next) => {
+        db
+            .fanfic.getBookmarked(req.user._id)
+            .then((results) => {
+                res.json(results);
+            })
+            .catch((err) => {
+                next(err);
+            })
+    })
+
+
 router.put('/fanfics/:id/rating', auth, (req, res, next) => {
     db
         .rating.insertOrUpdate(  req.user._id, new ObjectId(req.params.id), req.body.rating)
@@ -147,5 +162,6 @@ router.put('/fanfics/:id/rating', auth, (req, res, next) => {
             next(err);
         })
 })
+
 
 module.exports = router;

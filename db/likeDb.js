@@ -24,3 +24,28 @@ module.exports.delete = function (userId, fanficId) {
             });
     })
 }
+
+module.exports.insertOrUpdate = function (userId, fanficId) {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection(LIKES_COLLECTION)
+                    .updateOne({
+                        fanficId, userId
+                    }, {
+                        $set: {fanficId, userId}
+                    }, {
+                        upsert: true
+                    }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err)
+                })
+            })
+    })
+}
