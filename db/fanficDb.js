@@ -409,8 +409,8 @@ module.exports.getById = function (id) {
                         if (results.length) {
                             resolve(results[0]);
                         }
-                        // TODO write error
-                        reject({});
+
+                        reject({message: 'fanfic not found by id'});
                     })
             })
     })
@@ -449,8 +449,8 @@ module.exports.getRating = function (id) {
                         if (results.length) {
                             resolve(results[0]);
                         }
-                        // TODO write error
-                        reject({});
+
+                        reject({message: 'fanfic not found by id'});
                     });
             });
     });
