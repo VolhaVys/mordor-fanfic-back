@@ -147,16 +147,22 @@ router.get('/fanfics/bookmarked', auth,
             })
             .catch((err) => {
                 next(err);
-            })
+            });
     })
 
 
 router.put('/fanfics/:id/rating', auth, (req, res, next) => {
+    const fanficId = new ObjectId(req.params.id);
     db
-        .rating.insertOrUpdate(  req.user._id, new ObjectId(req.params.id), req.body.rating)
+        .rating.insertOrUpdate(  req.user._id, fanficId, req.body.rating)
         .then((result) => {
-            // TODO return average rating
-            res.status(200).send({message: "Rated"});
+            db.fanfic.getRating(fanficId)
+                .then((results) => {
+                    res.json(results);
+                })
+                .catch((err) => {
+                next(err);
+            });
         })
         .catch((err) => {
             next(err);

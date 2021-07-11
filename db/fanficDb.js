@@ -1,3 +1,4 @@
+const {RATING_COLLECTION} = require("./ratingDb");
 const {BOOKMARKS_COLLECTION} = require("./bookmarksDb");
 const {LIKES_COLLECTION} = require("./likeDb");
 const {MongoClient, ObjectId} = require('mongodb');
@@ -70,7 +71,7 @@ module.exports.getByUserId = function (userId) {
                             }
                         }, {
                             $addFields: {
-                                isLiked: { $gt: [{$size: "$user_like"}, 0] }
+                                isLiked: {$gt: [{$size: "$user_like"}, 0]}
                             }
                         }, {
                             $lookup: {
@@ -101,9 +102,40 @@ module.exports.getByUserId = function (userId) {
                             }
                         }, {
                             $addFields: {
-                                isBookmarked: { $gt: [{$size: "$user_bookmark"}, 0] }
+                                isBookmarked: {$gt: [{$size: "$user_bookmark"}, 0]}
                             }
-                        },{
+                        }, {
+                            $lookup: {
+                                from: RATING_COLLECTION,
+                                let: {id: "$_id"},
+                                pipeline: [{
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                {$eq: ['$fanficId', '$$id']},
+                                                {$eq: ['$userId', userId]},
+                                            ]
+                                        }
+                                    }
+                                }],
+                                as: 'user_rate'
+                            }
+                        }, {
+                            $addFields: {
+                                rate: {$ifNull: [{$first: '$user_rate.rating'}, null]}
+                            }
+                        }, {
+                            $lookup: {
+                                from: RATING_COLLECTION,
+                                localField: '_id',
+                                foreignField: 'fanficId',
+                                as: 'ff_rating'
+                            }
+                        }, {
+                            $addFields: {
+                                rating: {$avg: "$ff_rating.rating"}
+                            }
+                        }, {
                             $project: {
                                 _id: 1,
                                 fandom: 1,
@@ -113,6 +145,8 @@ module.exports.getByUserId = function (userId) {
                                 likes: 1,
                                 isLiked: 1,
                                 isBookmarked: 1,
+                                rate: 1,
+                                rating: 1,
                                 user: {firstName: 1, lastName: 1, _id: 1}
                             }
                         }]
@@ -140,8 +174,28 @@ module.exports.getBookmarked = function (userId) {
                     .collection(FANFICS_COLLECTION)
                     .aggregate(
                         [{
+                            $lookup: {
+                                from: BOOKMARKS_COLLECTION,
+                                let: {id: "$_id"},
+                                pipeline: [{
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                {$eq: ['$fanficId', '$$id']},
+                                                {$eq: ['$userId', userId]},
+                                            ]
+                                        }
+                                    }
+                                }],
+                                as: 'user_bookmark'
+                            }
+                        }, {
+                            $addFields: {
+                                isBookmarked: {$gt: [{$size: "$user_bookmark"}, 0]}
+                            }
+                        }, {
                             $match: {
-                                $and: [{userId: new ObjectId(userId)}]
+                                $and: [{isBookmarked: true}]
                             }
                         }, {
                             $lookup: {
@@ -170,7 +224,7 @@ module.exports.getBookmarked = function (userId) {
                             }
                         }, {
                             $addFields: {
-                                isLiked: { $gt: [{$size: "$user_like"}, 0] }
+                                isLiked: {$gt: [{$size: "$user_like"}, 0]}
                             }
                         }, {
                             $lookup: {
@@ -185,7 +239,7 @@ module.exports.getBookmarked = function (userId) {
                             }
                         }, {
                             $lookup: {
-                                from: BOOKMARKS_COLLECTION,
+                                from: RATING_COLLECTION,
                                 let: {id: "$_id"},
                                 pipeline: [{
                                     $match: {
@@ -197,15 +251,22 @@ module.exports.getBookmarked = function (userId) {
                                         }
                                     }
                                 }],
-                                as: 'user_bookmark'
+                                as: 'user_rate'
                             }
                         }, {
                             $addFields: {
-                                isBookmarked: { $gt: [{$size: "$user_bookmark"}, 0] }
+                                rate: {$ifNull: [{$first: '$user_rate.rating'}, null]}
                             }
                         }, {
-                            $match: {
-                                $and: [{isBookmarked: true}]
+                            $lookup: {
+                                from: RATING_COLLECTION,
+                                localField: '_id',
+                                foreignField: 'fanficId',
+                                as: 'ff_rating'
+                            }
+                        }, {
+                            $addFields: {
+                                rating: {$avg: "$ff_rating.rating"}
                             }
                         }, {
                             $project: {
@@ -217,6 +278,8 @@ module.exports.getBookmarked = function (userId) {
                                 likes: 1,
                                 isLiked: 1,
                                 isBookmarked: 1,
+                                rate: 1,
+                                rating: 1,
                                 user: {firstName: 1, lastName: 1, _id: 1}
                             }
                         }]
@@ -297,7 +360,7 @@ module.exports.getById = function (id) {
                         }
                         client.close();
 
-                        if(results.length) {
+                        if (results.length) {
                             resolve(results[0]);
                         }
                         // TODO write error
@@ -305,4 +368,52 @@ module.exports.getById = function (id) {
                     })
             })
     })
+}
+
+module.exports.getRating = function (id) {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection(FANFICS_COLLECTION)
+                    .aggregate(
+                        [{
+                            $match: {
+                                $and: [{_id: id}]
+                            }
+                        }, {
+                            $lookup: {
+                                from: RATING_COLLECTION,
+                                localField: '_id',
+                                foreignField: 'fanficId',
+                                as: 'ff_rating'
+                            }
+                        }, {
+                            $addFields: {
+                                rating: {$avg: "$ff_rating.rating"}
+                            }
+                        }, {
+                            $project: {
+                                rating: 1,
+                            }
+                        }]
+                    )
+                    .toArray(function (err, results) {
+                        if (err) {
+                            reject(err)
+                        }
+                        client.close();
+
+                        if (results.length) {
+                            resolve(results[0]);
+                        }
+                        // TODO write error
+                        reject({});
+                    });
+            });
+    });
 }

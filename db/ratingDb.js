@@ -13,7 +13,7 @@ module.exports.insertOrUpdate = function (userId, fanficId, rating) {
                 }
                 client
                     .db(dbName)
-                    .collection('ratings')
+                    .collection(RATING_COLLECTION)
                     .updateOne({
                         fanficId, userId
                     }, {
