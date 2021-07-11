@@ -273,6 +273,34 @@ module.exports.getLast = function (limit, userId) {
     });
 }
 
+module.exports.tagCloud = function () {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection(FANFICS_COLLECTION)
+                    .aggregate(
+                        [{
+                            $unwind: '$tags'
+                        }, {
+                            $group: { _id: '$tags', count: { $sum: 1 }}
+                        }]
+                    )
+                    .toArray(function (err, results) {
+                        if (err) {
+                            reject(err)
+                        }
+                        client.close();
+                        resolve(results);
+                    });
+            });
+    });
+}
+
 module.exports.getBookmarked = function (userId) {
     return new Promise((resolve, reject) => {
         MongoClient

@@ -3,7 +3,7 @@ let app = require('../app');
 let debug = require('debug')('task-4-c:server');
 let http = require('http');
 
-let port = normalizePort(process.env.PORT || 3001);
+let port = normalizePort(process.env.FANFIC_PORT || 3001);
 app.set('port', port);
 
 let server = http.createServer(app);

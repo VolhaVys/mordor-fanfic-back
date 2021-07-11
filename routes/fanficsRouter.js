@@ -193,5 +193,18 @@ router.get('/fanfics/last/:limit', getUser,
             });
     })
 
+router.get('/fanfics/tag_cloud', (req, res, next) => {
+        db
+            .fanfic.tagCloud()
+            .then((results) => {
+                res.json(results.map((tag) => {
+                    return {value: tag._id, count: tag.count};
+                }));
+            })
+            .catch((err) => {
+                next(err);
+            });
+    })
+
 
 module.exports = router;

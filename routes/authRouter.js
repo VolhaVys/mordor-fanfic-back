@@ -4,7 +4,7 @@ const db = require('../db/db');
 const bcrypt = require('bcryptjs');
 const {TOKENS_COLLECTION} = require("../db/tokenDb");
 const {v4: uuidv4} = require('uuid');
-const {Status} = require('../models/user');
+const {Status, Role} = require('../models/user');
 
 const isValidPassword = function (user, password) {
     return bcrypt.compareSync(password, user.password);
@@ -23,12 +23,13 @@ router.post('/registration', (req, res, next) => {
                         registrationDate: new Date().toISOString(),
                         lastLoginDate: new Date().toISOString(),
                         status: Status.ACTIVE,
+                        role: Role.USER,
                         password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
                     };
                     db
                         .add('users', data)
                         .then((result) => {
-                            generateToken(result[0], res, next);
+                            generateToken(result, res, next);
                         })
                         .catch((err) => {
                             next(err);
@@ -82,7 +83,7 @@ router.post('/login', (req, res, next) => {
         })
 })
 
-const generateToken = ({email, firstName, lastName}, res, next) => {
+const generateToken = ({email, firstName, lastName, role, _id}, res, next) => {
     const data = {};
     data.email = email;
     data.token = uuidv4();
@@ -94,7 +95,7 @@ const generateToken = ({email, firstName, lastName}, res, next) => {
                 .then((results) => {
                     res.json({
                         token: results.token,
-                        user: {firstName, lastName},
+                        user: {firstName, lastName, role, id: _id},
                     })
                 })
                 .catch((err) => {
