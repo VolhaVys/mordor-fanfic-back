@@ -73,6 +73,35 @@ module.exports.updateStatus = function (ids, status) {
     })
 }
 
+module.exports.updateRole = function (ids, role) {
+    return new Promise((resolve, reject) => {
+        MongoClient
+            .connect(url, function (err, client) {
+                if (err) {
+                    reject(err);
+                }
+                client
+                    .db(dbName)
+                    .collection(USERS_COLLECTION)
+                    .updateMany({
+                        _id: {
+                            $in: ids.map(id => {
+                                return new ObjectId(id);
+                            })
+                        }
+                    }, {
+                        $set: {
+                            role
+                        }
+                    }).then(() => {
+                    resolve();
+                }).catch((err) => {
+                    reject(err)
+                })
+            })
+    })
+}
+
 module.exports.delete = function (ids) {
     return new Promise((resolve, reject) => {
         MongoClient

@@ -35,7 +35,7 @@ router.post('/registration', (req, res, next) => {
                             next(err);
                         })
                 } else {
-                    const err = new Error('This user already exists!');
+                    const err = new Error('Пользователь с таким email уже существует!');
                     err.status = 400;
                     next(err);
                 }
@@ -55,25 +55,26 @@ router.post('/login', (req, res, next) => {
         .user.getByEmail(req.body.email)
         .then((results) => {
             if (results.length === 0) {
-                const err = new Error('Is not a valid username or password!');
+                const err = new Error('Неправильный логин или пароль!');
                 err.status = 400;
-                next(err);
-                return;
-            }
-            if (results[0].status === Status.BLOCKED) {
-                const err = new Error('Your account is blocked!');
-                err.status = 403;
                 next(err);
                 return;
             }
 
             if (isValidPassword(results[0], req.body.password)) {
+                if (results[0].status === Status.BLOCKED) {
+                    const err = new Error('Ваш аккаунт заблокирован!');
+                    err.status = 403;
+                    next(err);
+                    return;
+                }
+
                 db.user.updateLastLoginDate(results[0]._id).catch((err) => {
                     console.error(err);
                 });
                 generateToken(results[0], res, next);
             } else {
-                const err = new Error('Is not a valid username or password!');
+                const err = new Error('Неправильный логин или пароль!');
                 err.status = 400;
                 next(err);
             }

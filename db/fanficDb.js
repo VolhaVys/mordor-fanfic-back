@@ -338,21 +338,19 @@ module.exports.getBookmarked = function (userId) {
     });
 }
 
-module.exports.update = function (fanfic) {
+module.exports.update = function (fanficId, data) {
     return new Promise((resolve, reject) => {
         MongoClient
             .connect(url, function (err, client) {
                 if (err) {
                     reject(err);
                 }
-                let data = {...fanfic};
-                delete data._id;
 
                 client
                     .db(dbName)
                     .collection(FANFICS_COLLECTION)
                     .updateOne({
-                        _id: new ObjectId(fanfic._id)
+                        _id: fanficId
                     }, {
                         $set: data,
                         $currentDate: {

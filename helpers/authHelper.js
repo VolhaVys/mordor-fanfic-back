@@ -1,12 +1,13 @@
 const {Status} = require('../models/user');
 const db = require('../db/db');
+const {Role} = require("../models/user");
 
 const auth = function (req, res, next) {
     db
         .token.get(req.headers.authorization)
         .then((results) => {
             if (results.length === 0) {
-                const err = new Error('Not authorized!');
+                const err = new Error('Не авторизован!');
                 err.status = 401;
                 next(err);
             } else {
@@ -14,7 +15,7 @@ const auth = function (req, res, next) {
                     .user.getByEmail(results[0].email)
                     .then((results) => {
                         if (results[0].status === Status.BLOCKED) {
-                            const err = new Error('Your account is blocked!');
+                            const err = new Error('Ваш аккаунт заблокирован!');
                             err.status = 403;
                             next(err);
                             return;
@@ -64,3 +65,15 @@ const getUser = function (req, res, next) {
 }
 
 module.exports.getUser = getUser;
+
+const isAdmin = function (req, res, next) {
+    if (req.user.role === Role.ADMIN) {
+        next();
+    } else {
+        const err = new Error('Запрещено!');
+        err.status = 403;
+        next(err);
+    }
+}
+
+module.exports.isAdmin = isAdmin;

@@ -9,7 +9,7 @@ const {LIKES_COLLECTION} = require('../db/likeDb');
 const {ObjectId} = require('mongodb');
 
 
-const getFanfic = function (req, res, next) {
+const getFanfic = (req, res, next) => {
     db
         .fanfic.getById(req.params.id)
         .then((result) => {
@@ -19,6 +19,16 @@ const getFanfic = function (req, res, next) {
         .catch((err) => {
             next(err);
         })
+}
+
+const canEdit = (req, res, next) => {
+    if (req.user._id.equals(req.fanfic.userId) || req.user.role === Role.ADMIN) {
+        next();
+    } else {
+        const err = new Error('No permission');
+        err.status = 403;
+        next(err);
+    }
 }
 
 router.get('/fanfics', (req, res, next) => {
@@ -32,31 +42,15 @@ router.get('/fanfics', (req, res, next) => {
         })
 })
 
-router.put('/fanfics', auth, (req, res, next) => {
+router.delete('/fanfics/:id', auth, getFanfic, canEdit, (req, res, next) => {
     db
-        .fanfic.update(req.body)
-        .then((result) => {
-            res.status(200).send({message: "Updated"});
+        .fanfic.delete(req.params.id)
+        .then(() => {
+            res.status(200).send({message: "Deleted"})
         })
         .catch((err) => {
             next(err);
         })
-})
-
-router.delete('/fanfics/:id', auth, getFanfic, (req, res, next) => {
-
-    if (req.user._id.equals(req.fanfic.userId) || req.user.role === Role.ADMIN) {
-        db
-            .fanfic.delete(req.params.id)
-            .then(() => {
-                res.status(200).send({message: "Deleted"})
-            })
-            .catch((err) => {
-                next(err);
-            })
-    } else {
-        res.status(403).json({message: "No permission"});
-    }
 })
 
 router.post('/fanfics', auth, (req, res, next) => {
@@ -186,6 +180,17 @@ router.get('/fanfics/last/:limit', getUser, (req, res, next) => {
         .catch((err) => {
             next(err);
         });
+})
+
+router.put('/fanfics/:id', auth, getFanfic, canEdit, (req, res, next) => {
+    db
+        .fanfic.update(req.fanfic._id, req.body)
+        .then(() => {
+            res.status(200).send({message: "Updated"});
+        })
+        .catch((err) => {
+            next(err);
+        })
 })
 
 router.get('/fanfics/:id', getFanfic, (req, res, next) => {
