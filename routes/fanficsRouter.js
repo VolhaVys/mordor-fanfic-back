@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
-const { auth, getUser } = require('../helpers/authHelper');
+const {auth, getUser} = require('../helpers/authHelper');
 const {RATING_COLLECTION} = require("../db/ratingDb");
 const {BOOKMARKS_COLLECTION} = require("../db/bookmarksDb");
 const {Role} = require("../models/user");
 const {LIKES_COLLECTION} = require('../db/likeDb');
 const {ObjectId} = require('mongodb');
-
 
 
 const getFanfic = function (req, res, next) {
@@ -115,17 +114,16 @@ router.put('/fanfics/:id/unlike', auth, (req, res, next) => {
         })
 })
 
-router.put('/fanfics/:id/bookmark', auth,
-    (req, res, next) => {
-        db
-            .add(BOOKMARKS_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id)})
-            .then((result) => {
-                res.status(200).send({message: "Bookmarked"});
-            })
-            .catch((err) => {
-                next(err);
-            })
-    })
+router.put('/fanfics/:id/bookmark', auth, (req, res, next) => {
+    db
+        .add(BOOKMARKS_COLLECTION, {userId: req.user._id, fanficId: new ObjectId(req.params.id)})
+        .then((result) => {
+            res.status(200).send({message: "Bookmarked"});
+        })
+        .catch((err) => {
+            next(err);
+        })
+})
 
 router.put('/fanfics/:id/remove_bookmark', auth, (req, res, next) => {
     db
@@ -138,73 +136,60 @@ router.put('/fanfics/:id/remove_bookmark', auth, (req, res, next) => {
         })
 })
 
-router.get('/fanfics/bookmarked', auth,
-    (req, res, next) => {
-        db
-            .fanfic.getBookmarked(req.user._id)
-            .then((results) => {
-                res.json(results);
-            })
-            .catch((err) => {
-                next(err);
-            });
-    })
+router.get('/fanfics/bookmarked', auth, (req, res, next) => {
+    db
+        .fanfic.getBookmarked(req.user._id)
+        .then((results) => {
+            res.json(results);
+        })
+        .catch((err) => {
+            next(err);
+        });
+})
 
 
 router.put('/fanfics/:id/rating', auth, (req, res, next) => {
     const fanficId = new ObjectId(req.params.id);
     db
-        .rating.insertOrUpdate(  req.user._id, fanficId, req.body.rating)
+        .rating.insertOrUpdate(req.user._id, fanficId, req.body.rating)
         .then((result) => {
             db.fanfic.getRating(fanficId)
                 .then((results) => {
                     res.json(results);
                 })
                 .catch((err) => {
-                next(err);
-            });
+                    next(err);
+                });
         })
         .catch((err) => {
             next(err);
         })
 })
 
-router.get('/fanfics/top/:limit', getUser,
-    (req, res, next) => {
-        db
-            .fanfic.getTopRate(+req.params.limit, req.user?._id)
-            .then((results) => {
-                res.json(results);
-            })
-            .catch((err) => {
-                next(err);
-            });
-    })
+router.get('/fanfics/top/:limit', getUser, (req, res, next) => {
+    db
+        .fanfic.getTopRate(+req.params.limit, req.user?._id)
+        .then((results) => {
+            res.json(results);
+        })
+        .catch((err) => {
+            next(err);
+        });
+})
 
-router.get('/fanfics/last/:limit', getUser,
-    (req, res, next) => {
-        db
-            .fanfic.getLast(+req.params.limit, req.user?._id)
-            .then((results) => {
-                res.json(results);
-            })
-            .catch((err) => {
-                next(err);
-            });
-    })
+router.get('/fanfics/last/:limit', getUser, (req, res, next) => {
+    db
+        .fanfic.getLast(+req.params.limit, req.user?._id)
+        .then((results) => {
+            res.json(results);
+        })
+        .catch((err) => {
+            next(err);
+        });
+})
 
-router.get('/fanfics/tag_cloud', (req, res, next) => {
-        db
-            .fanfic.tagCloud()
-            .then((results) => {
-                res.json(results.map((tag) => {
-                    return {value: tag._id, count: tag.count};
-                }));
-            })
-            .catch((err) => {
-                next(err);
-            });
-    })
-
+router.get('/fanfics/:id', getFanfic, (req, res, next) => {
+    res.json(req.fanfic);
+})
 
 module.exports = router;

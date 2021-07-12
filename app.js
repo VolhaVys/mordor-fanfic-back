@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const authRouter = require('./routes/authRouter');
 const userRouter = require('./routes/usersRouter');
 const fanficRouter = require('./routes/fanficsRouter');
+const tagRouter = require('./routes/tagsRouter');
 const cors = require('cors');
 const app = express();
 const API_VERSION = 'v1';
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(`/api/${API_VERSION}/`, authRouter);
 app.use(`/api/${API_VERSION}/`, userRouter);
 app.use(`/api/${API_VERSION}/`, fanficRouter);
+app.use(`/api/${API_VERSION}/`, tagRouter);
 
 
 app.use(function (req, res, next) {
