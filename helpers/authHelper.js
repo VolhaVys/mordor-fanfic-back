@@ -16,7 +16,7 @@ const auth = function (req, res, next) {
                     .then((results) => {
                         if (results[0].status === Status.BLOCKED) {
                             const err = new Error('Ваш аккаунт заблокирован!');
-                            err.status = 403;
+                            err.status = 401;
                             next(err);
                             return;
                         }
